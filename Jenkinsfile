@@ -1,30 +1,81 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:18-alpine'
-            args '-p 3000:3000'
-        }
-    }
+    agent any
+
     environment {
-        CI = 'true'
+        DOCKER_IMAGE_NAME = 'my-react-app'
+        DOCKER_REGISTRY = 'my-docker-registry.example.com'
+        DOCKER_REGISTRY_CREDENTIALS_ID = 'docker-registry-credentials'
+        DEPLOYMENT_SERVER_IP = 'your.server.ip.address'
+        DEPLOYMENT_PATH = '/var/www/my-react-app'
+        SSH_CREDENTIALS_ID = 'ssh-credentials-id'
     }
+
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'npm install'
+                // Checkout the source code from the repository
+                git url: 'https://github.com/your-repo/react-app.git', branch: 'main'
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image
+                    docker.build("${DOCKER_IMAGE_NAME}:latest")
+                }
+            }
+        }
+
         stage('Test') {
             steps {
-                sh './jenkins/scripts/test.sh'
+                script {
+                    // Placeholder for any tests
+                }
             }
         }
-        stage('Deliver') {
+
+        stage('Push Docker Image') {
             steps {
-                sh './jenkins/scripts/deliver.sh'
-                input message: 'Finished using the web site? (Click "Proceed" to continue)'
-                sh './jenkins/scripts/kill.sh'
+                script {
+                    // Log in to Docker registry
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", "${DOCKER_REGISTRY_CREDENTIALS_ID}") {
+                        // Push Docker image to registry
+                        docker.image("${DOCKER_IMAGE_NAME}:latest").push('latest')
+                    }
+                }
             }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    // Deploy the Docker image to the server
+                    sh '''
+                        ssh -i ${SSH_CREDENTIALS_ID} user@${DEPLOYMENT_SERVER_IP} '
+                            docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest &&
+                            docker stop my-running-container || true &&
+                            docker rm my-running-container || true &&
+                            docker run -d --name my-running-container -p 80:80 ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest
+                        '
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Cleanup workspace after build
+            cleanWs()
+        }
+        success {
+            // Actions on successful deployment
+            echo 'Deployment successful!'
+        }
+        failure {
+            // Actions on failed deployment
+            echo 'Deployment failed!'
         }
     }
 }
