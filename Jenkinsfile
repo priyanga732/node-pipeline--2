@@ -14,7 +14,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout the source code from the repository
-                git url: 'https://github.com/your-repo/react-app.git', branch: 'main'
+                git url: '', branch: 'main'
             }
         }
 
