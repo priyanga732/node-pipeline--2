@@ -14,7 +14,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout the source code from the repository
-                git url: '', branch: 'main'
+                git url: 'https://github.com/priyanga732/node-pipeline--2.git', branch: 'main'
             }
         }
 
