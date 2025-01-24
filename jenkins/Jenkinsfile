@@ -1,48 +1,18 @@
-
-
-
-
 pipeline {
     agent any
-
     stages {
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/your-repo/react-app.git'
-            }
-        }
-
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
                 sh 'npm install'
             }
         }
-
-        stage('Build React App') {
+        
+        stage('Deliver') { 
             steps {
-                sh 'npm run build'
+                sh './jenkins/scripts/deliver.sh' 
+                input message: 'Finished using the web site? (Click "Proceed" to continue)' 
+                sh './jenkins/scripts/kill.sh' 
             }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t react-app:latest .'
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                sh 'docker run -d --name react-container -p 3000:3000 react-app:latest'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
         }
     }
 }
