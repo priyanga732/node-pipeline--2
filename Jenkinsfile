@@ -6,7 +6,7 @@ pipeline {
             steps {
                 git branch: 'main', 
                     credentialsId: 'id_ed25519.pub', 
-                    url: 'git@github.com:subramaniravi/node-2.git'
+                    url: 'git@github.com:priyanga732/node-pipeline--2.git'
             }
         }
         
